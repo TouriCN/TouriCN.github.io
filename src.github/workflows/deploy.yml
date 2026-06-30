@@ -1,0 +1,104 @@
+name: Deploy mdBook to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      # 1. 拉取代码（必须 fetch-depth: 0 才能获取完整 git 历史用于统计）
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 2. 运行你的自定义脚本（RSS 和 Sitemap）
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Python deps
+        run: pip install feedgen
+      - name: Generate RSS
+        run: python generate_rss.py
+      - name: Generate Sitemap
+        run: python generate_sitemap.py
+
+      # 3. 收集构建元数据（核心逻辑）
+      - name: Collect build metadata
+        run: |
+          # ===== 可自定义配置 =====
+          START_DATE="2024-01-01"  # 网站上线日期，用于计算运行天数
+          # ========================
+
+          # 动态时间（北京时间）
+          BUILD_TIME=$(TZ=Asia/Shanghai date +"%Y-%m-%d %H:%M:%S")
+
+          # Git 信息
+          SHORT_HASH=${GITHUB_SHA::7}
+          ACTOR=${{ github.actor }}
+          LAST_MSG=$(git log -1 --pretty=%B)
+
+          # 统计信息（假设 md 文件在 src/ 目录下）
+          TOTAL_FILES=$(find src -name "*.md" | wc -l)
+          TOTAL_WORDS=$(find src -name "*.md" -exec cat {} \; | wc -c)
+          AVG_CHARS=$((TOTAL_WORDS / TOTAL_FILES))
+
+          # 计算运行天数
+          START_SEC=$(date -d "$START_DATE" +%s)
+          NOW_SEC=$(date +%s)
+          RUN_DAYS=$(( (NOW_SEC - START_SEC) / 86400 ))
+
+          # 导出为环境变量
+          echo "BUILD_TIME=$BUILD_TIME" >> $GITHUB_ENV
+          echo "SHORT_HASH=$SHORT_HASH" >> $GITHUB_ENV
+          echo "ACTOR=$ACTOR" >> $GITHUB_ENV
+          echo "LAST_MSG=$LAST_MSG" >> $GITHUB_ENV
+          echo "TOTAL_FILES=$TOTAL_FILES" >> $GITHUB_ENV
+          echo "TOTAL_WORDS=$TOTAL_WORDS" >> $GITHUB_ENV
+          echo "AVG_CHARS=$AVG_CHARS" >> $GITHUB_ENV
+          echo "RUN_DAYS=$RUN_DAYS" >> $GITHUB_ENV
+
+      # 4. 注入到主页 (src/README.md)
+      - name: Inject metadata into README
+        run: |
+          sed -i "s/{{BUILD_TIME}}/${{ env.BUILD_TIME }}/g" src/README.md
+          sed -i "s/{{SHORT_HASH}}/${{ env.SHORT_HASH }}/g" src/README.md
+          sed -i "s/{{ACTOR}}/${{ env.ACTOR }}/g" src/README.md
+          sed -i "s/{{LAST_MSG}}/${{ env.LAST_MSG }}/g" src/README.md
+          sed -i "s/{{TOTAL_FILES}}/${{ env.TOTAL_FILES }}/g" src/README.md
+          sed -i "s/{{TOTAL_WORDS}}/${{ env.TOTAL_WORDS }}/g" src/README.md
+          sed -i "s/{{AVG_CHARS}}/${{ env.AVG_CHARS }}/g" src/README.md
+          sed -i "s/{{RUN_DAYS}}/${{ env.RUN_DAYS }}/g" src/README.md
+
+      # 5. 构建 mdBook
+      - name: Setup mdBook
+        uses: peaceiris/actions-mdbook@v2
+        with:
+          mdbook-version: "latest"
+
+      - name: Build book
+        run: mdbook build
+
+      # 6. 部署到 GitHub Pages
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./book
+
+      - name: Deploy
+        uses: actions/deploy-pages@v4
