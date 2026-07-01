@@ -1,9 +1,10 @@
 # 主页
 <script src="https://keepandroidopen.org/banner.js"></script> 
 ## 内容
-<div id="1">
-<object data="https://touricn.github.io/SUMMARY.html" width="100%" height="500" style="border: none; overflow: hidden;"></object>
+<div style="min-height: 80vh;">
+<object data="https://touricn.github.io/SUMMARY.html" style="border: none;"></object>
 </div>
+
 
 ## 关于此站点
 该站点由**Tourism**在中国时间2026年6月18号下午搭建。
