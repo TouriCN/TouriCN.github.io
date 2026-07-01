@@ -49,23 +49,28 @@ def preprocess_github_admonitions(md_content):
 
 def fix_internal_links(html_content, current_dir=""):
     """
-    ✅ 自动转换内部 .md 链接为 .html
-    ✅ 支持多级目录的相对路径
+    ✅ 只处理 href="xxx.md" 的内部链接
+    ✅ 绝不处理 src 属性，防止 iframe 被拆烂
     """
-    pattern = r'href=["\']([^"\']+\.md)["\']'
+    # 使用负向前瞻，确保前面不是 src=
+    pattern = r'(?<!\bsrc=[\'"])href=["\']([^"\']+\.md)["\']'
     
     def replace_link(match):
-        full_match = match.group(0)
-        path = match.group(1)
+        full_match = match.group(0)  # 例如 href="friends.md"
+        path = match.group(1)        # 例如 friends.md
         
+        # 去掉开头的斜杠
         if path.startswith('/'):
             path = path[1:]
         
+        # 替换后缀
         html_path = path.replace('.md', '.html')
         
+        # 拼接相对路径
         if current_dir:
             html_path = os.path.join(current_dir, html_path).replace('\\', '/')
         
+        # 返回修复后的完整属性
         return full_match.replace(path, html_path)
     
     return re.sub(pattern, replace_link, html_content)
@@ -82,8 +87,10 @@ def compile_markdown():
             with open(md_path, "r", encoding="utf-8") as f:
                 md_content = f.read()
             
+            # 1. 预处理警告框
             processed_md = preprocess_github_admonitions(md_content)
             
+            # 2. Markdown 转 HTML
             html_body = markdown.markdown(
                 processed_md,
                 extensions=[
@@ -94,16 +101,23 @@ def compile_markdown():
                 ]
             )
             
+            # 3. 计算当前文件相对于 src 的目录
             rel_path = os.path.relpath(root, SRC_DIR)
-            current_dir = '' if rel_path == '.' else rel_path.replace('\\', '/')
+            if rel_path == '.':
+                current_dir = ''
+            else:
+                current_dir = rel_path.replace('\\', '/')
             
+            # 4. 修复内部链接（只处理 href，不碰 src）
             html_body = fix_internal_links(html_body, current_dir)
             
+            # 5. 确定输出文件名
             if filename == "README.md":
                 html_filename = "index.html"
             else:
                 html_filename = filename.replace(".md", ".html")
             
+            # 6. 构建输出路径
             if current_dir:
                 output_dir = current_dir
                 os.makedirs(output_dir, exist_ok=True)
@@ -111,6 +125,7 @@ def compile_markdown():
             else:
                 html_path = html_filename
             
+            # 7. 标题处理
             base_title = filename.replace('.md', '')
             full_title = f"{base_title}-TouriCN"
             
@@ -162,16 +177,16 @@ def compile_markdown():
             padding: 4px 8px; font-size: 14px; cursor: pointer; color: var(--text);
         }}
 
-        /* ✅ 修复 iframe 显示问题 */
+        /* ✅ iframe 样式 */
         iframe {{
-            display: block;              /* 关键：确保 iframe 是块级元素 */
-            width: 100%;                 /* 宽度占满容器 */
-            min-height: 400px;           /* 最小高度，避免不可见 */
+            display: block;
+            width: 100%;
+            min-height: 400px;
             max-width: 100%;
             border: 1px solid var(--border);
             background: var(--bg);
             border-radius: 4px;
-            box-sizing: border-box;       /* 确保边框不影响尺寸 */
+            box-sizing: border-box;
         }}
         
         /* 确保 iframe 容器正确 */
