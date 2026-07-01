@@ -6,7 +6,8 @@ SRC_DIR = "src"
 
 def preprocess_github_admonitions(md_content):
     """
-    只处理 GitHub 风格的 > [!TIP]，不影响普通引用块
+    ✅ 只处理 GitHub 警告框（> [!TIP]）
+    ✅ 普通引用块（>）完全原样保留，交给 Markdown 解析
     """
     lines = md_content.split('\n')
     result = []
@@ -15,16 +16,16 @@ def preprocess_github_admonitions(md_content):
 
     while i < n:
         line = lines[i]
-        stripped = line.strip()
-
-        # ✅ 严格匹配 GitHub 警告框：> [!TIP]
-        if stripped.startswith('> [!') and stripped.endswith(']'):
-            match = re.search(r'\[!([A-Z]+)\]', stripped)
+        
+        # 严格匹配 GitHub 警告框：> [!TIP]
+        if line.strip().startswith('> [!') and line.strip().endswith(']'):
+            match = re.search(r'\[!([A-Z]+)\]', line.strip())
             if match:
                 admon_type = match.group(1).lower()
                 title = match.group(1)
                 i += 1
-
+                
+                # 收集警告框内容
                 body_parts = []
                 while i < n and lines[i].strip().startswith('>'):
                     content = lines[i].strip()
@@ -35,19 +36,20 @@ def preprocess_github_admonitions(md_content):
                     if content:
                         body_parts.append(content)
                     i += 1
-
+                
                 body = ' '.join(body_parts)
+                # 直接输出 HTML 提示框
                 result.append(f'<div class="admonition {admon_type}">')
                 result.append(f'  <div class="admonition-title">{title}</div>')
                 result.append(f'  <div>{body}</div>')
                 result.append('</div>')
                 result.append('')
             else:
-                # ✅ 不匹配的，原样保留（让 Markdown 解析普通引用）
+                # 不是警告框，原样保留（包括普通引用）
                 result.append(line)
                 i += 1
         else:
-            # ✅ 普通行，原样保留
+            # ✅ 普通行（包括普通引用 > xxx）完全原样保留
             result.append(line)
             i += 1
 
@@ -65,8 +67,10 @@ def compile_markdown():
         with open(md_path, "r", encoding="utf-8") as f:
             md_content = f.read()
         
+        # 预处理警告框
         processed_md = preprocess_github_admonitions(md_content)
         
+        # ✅ 使用最基础的 Markdown 扩展
         html_body = markdown.markdown(
             processed_md,
             extensions=[
@@ -90,7 +94,7 @@ def compile_markdown():
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{filename.replace('.md', '')}-TouriCN</title>
+    <title>{filename.replace('.md', '')}</title>
     <style>
         :root {{
             color-scheme: light dark;
@@ -109,7 +113,7 @@ def compile_markdown():
         th, td {{ border: 1px solid var(--border); padding: 6px 10px; }}
         pre, code {{ background: rgba(128,128,128,0.15); padding: 2px 6px; border-radius: 4px; }}
         
-        /* ✅ 普通引用块 */
+        /* ✅ 普通引用块（关键） */
         blockquote {{
             margin: 1em 0;
             padding: 10px 15px;
@@ -117,7 +121,7 @@ def compile_markdown():
             background: rgba(128, 128, 128, 0.08);
         }}
         
-        /* ✅ 警告框 */
+        /* ✅ GitHub 风格警告框 */
         .admonition {{
             border-left: 4px solid var(--border);
             padding: 10px 15px;
