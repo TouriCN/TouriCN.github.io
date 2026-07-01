@@ -197,7 +197,9 @@ def main():
         print(f"  - {item['title']} ({item['pubDate']})")
     
     # 确保输出目录存在
+    if os.path.dirname(OUT_FILE):
     os.makedirs(os.path.dirname(OUT_FILE), exist_ok=True)
+ 
     
     # 生成 RSS XML
     with open(OUT_FILE, "w", encoding="utf-8") as f:
