@@ -2,7 +2,7 @@
 <script src="https://keepandroidopen.org/banner.js"></script> 
 ## 目录
 <iframe 
-    src="/SUMMARY.html"
+    src="/SUMMARY.md"
     width="100%"
     height="500"
     style="border: none; overflow: hidden;"
@@ -10,8 +10,8 @@
 </iframe>
 
 ## 关于此站点
-> 该站点由**Tourism**在中国时间2026年6月18号下午搭建。
----
+该站点由**Tourism**在中国时间2026年6月18号下午搭建。
+<br><br>
 本站点为[旅游的小网站](http://ly.20110914.xyz)的重新更新版本，现在采用GitHub页面服务托管。
 <br><br>
 当然，如果你有兴趣贡献此站点的话，欢迎在[该站点的Github仓库](https://github.com/TouriCN/TouriCN.github.io)提交Pull Requests！
