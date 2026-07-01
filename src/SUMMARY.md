@@ -6,7 +6,5 @@
     - [2026-3-19 共第三期](./posts/tihl/2026-3-19.md)
     - [2026-4-2 共第四期](./posts/tihl/2026-4-2.md)
     - [2026-6-7 共第五期](./posts/tihl/2026-6-7.md)
-  - [杂谈]()
-    - [为什么我们使用mdBook作为前端](./posts/talk/why-use-mdbook.md)
 - [友链](./friends.md)
 - [开往](https://www.travellings.cn/go.html)
