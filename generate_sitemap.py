@@ -3,7 +3,7 @@ import os
 
 SITE_URL = "https://touricn.github.io"
 SUMMARY = "src/SUMMARY.md"
-OUT_FILE = "book/sitemap.xml"
+OUT_FILE = "sitemap.xml"
 
 def main():
     if not os.path.exists(SUMMARY):
