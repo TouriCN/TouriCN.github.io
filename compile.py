@@ -7,7 +7,7 @@ SRC_DIR = "src"
 def preprocess_github_admonitions(md_content):
     """
     ✅ 只处理 GitHub 警告框（> [!TIP]）
-    ✅ 普通引用块（>）完全原样保留，交给 Markdown 解析
+    ✅ 普通引用块（> xxx）完全原样保留
     """
     lines = md_content.split('\n')
     result = []
@@ -17,7 +17,7 @@ def preprocess_github_admonitions(md_content):
     while i < n:
         line = lines[i]
         
-        # 严格匹配 GitHub 警告框：> [!TIP]
+        # 1. 严格匹配 GitHub 警告框：> [!TIP]
         if line.strip().startswith('> [!') and line.strip().endswith(']'):
             match = re.search(r'\[!([A-Z]+)\]', line.strip())
             if match:
@@ -38,18 +38,18 @@ def preprocess_github_admonitions(md_content):
                     i += 1
                 
                 body = ' '.join(body_parts)
-                # 直接输出 HTML 提示框
+                # 输出 HTML 提示框
                 result.append(f'<div class="admonition {admon_type}">')
                 result.append(f'  <div class="admonition-title">{title}</div>')
                 result.append(f'  <div>{body}</div>')
                 result.append('</div>')
                 result.append('')
             else:
-                # 不是警告框，原样保留（包括普通引用）
+                # 不是警告框，原样保留
                 result.append(line)
                 i += 1
         else:
-            # ✅ 普通行（包括普通引用 > xxx）完全原样保留
+            # 2. ✅ 普通行（包括普通引用 > xxx）完全原样保留
             result.append(line)
             i += 1
 
@@ -67,10 +67,8 @@ def compile_markdown():
         with open(md_path, "r", encoding="utf-8") as f:
             md_content = f.read()
         
-        # 预处理警告框
         processed_md = preprocess_github_admonitions(md_content)
         
-        # ✅ 使用最基础的 Markdown 扩展
         html_body = markdown.markdown(
             processed_md,
             extensions=[
@@ -113,7 +111,7 @@ def compile_markdown():
         th, td {{ border: 1px solid var(--border); padding: 6px 10px; }}
         pre, code {{ background: rgba(128,128,128,0.15); padding: 2px 6px; border-radius: 4px; }}
         
-        /* ✅ 普通引用块（关键） */
+        /* ✅ 普通引用块 */
         blockquote {{
             margin: 1em 0;
             padding: 10px 15px;
@@ -121,7 +119,7 @@ def compile_markdown():
             background: rgba(128, 128, 128, 0.08);
         }}
         
-        /* ✅ GitHub 风格警告框 */
+        /* ✅ 警告框 */
         .admonition {{
             border-left: 4px solid var(--border);
             padding: 10px 15px;
