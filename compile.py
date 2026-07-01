@@ -222,6 +222,21 @@ def compile_markdown():
         footer a {{
             color: inherit;
         }}
+        .embed-wrapper {
+            position: relative;
+            min-height: 80vh;
+            height: auto;
+            margin: 1em 0;
+        }
+
+        .embed-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
     </style>
 </head>
 <body>
