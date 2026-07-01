@@ -7,7 +7,7 @@ SRC_DIR = "src"
 def preprocess_github_admonitions(md_content):
     """
     ✅ 只处理 GitHub 警告框（> [!TIP]）
-    ✅ 普通引用块（> xxx）完全原样保留
+    ✅ 普通引用框（> xxx）完全原样保留，一字不改
     """
     lines = md_content.split('\n')
     result = []
@@ -17,39 +17,36 @@ def preprocess_github_admonitions(md_content):
     while i < n:
         line = lines[i]
         
-        # 1. 严格匹配 GitHub 警告框：> [!TIP]
-        if line.strip().startswith('> [!') and line.strip().endswith(']'):
-            match = re.search(r'\[!([A-Z]+)\]', line.strip())
-            if match:
-                admon_type = match.group(1).lower()
-                title = match.group(1)
+        # 1. 严格匹配 GitHub 警告框：必须是 "> [!TIP]" 这种格式
+        if line.strip() == '> [!TIP]' or \
+           line.strip() == '> [!WARNING]' or \
+           line.strip() == '> [!NOTE]':
+            # 提取类型
+            admon_type = line.strip().split('[!')[1].split(']')[0].lower()
+            title = line.strip().split('[!')[1].split(']')[0]
+            i += 1
+            
+            # 收集警告框内容（只收集以 > 开头的行）
+            body_parts = []
+            while i < n and lines[i].strip().startswith('>'):
+                content = lines[i].strip()
+                if content.startswith('> '):
+                    content = content[2:]
+                elif content.startswith('>'):
+                    content = content[1:]
+                if content:
+                    body_parts.append(content)
                 i += 1
-                
-                # 收集警告框内容
-                body_parts = []
-                while i < n and lines[i].strip().startswith('>'):
-                    content = lines[i].strip()
-                    if content.startswith('> '):
-                        content = content[2:]
-                    elif content.startswith('>'):
-                        content = content[1:]
-                    if content:
-                        body_parts.append(content)
-                    i += 1
-                
-                body = ' '.join(body_parts)
-                # 输出 HTML 提示框
-                result.append(f'<div class="admonition {admon_type}">')
-                result.append(f'  <div class="admonition-title">{title}</div>')
-                result.append(f'  <div>{body}</div>')
-                result.append('</div>')
-                result.append('')
-            else:
-                # 不是警告框，原样保留
-                result.append(line)
-                i += 1
+            
+            body = ' '.join(body_parts)
+            # 输出纯 HTML 提示框
+            result.append(f'<div class="admonition {admon_type}">')
+            result.append(f'  <div class="admonition-title">{title}</div>')
+            result.append(f'  <div>{body}</div>')
+            result.append('</div>')
+            result.append('')
         else:
-            # 2. ✅ 普通行（包括普通引用 > xxx）完全原样保留
+            # 2. ✅ 所有其他行（包括普通引用 > xxx）完全原样保留
             result.append(line)
             i += 1
 
@@ -67,8 +64,10 @@ def compile_markdown():
         with open(md_path, "r", encoding="utf-8") as f:
             md_content = f.read()
         
+        # 预处理警告框
         processed_md = preprocess_github_admonitions(md_content)
         
+        # 基础 Markdown 解析
         html_body = markdown.markdown(
             processed_md,
             extensions=[
@@ -87,12 +86,16 @@ def compile_markdown():
         
         html_path = html_filename
         
+        # 标题处理
+        base_title = filename.replace('.md', '')
+        full_title = f"{base_title}-TouriCN"
+        
         full_html = f"""<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{filename.replace('.md', '')}-TouriCN</title>
+    <title>{full_title}</title>
     <style>
         :root {{
             color-scheme: light dark;
@@ -111,7 +114,7 @@ def compile_markdown():
         th, td {{ border: 1px solid var(--border); padding: 6px 10px; }}
         pre, code {{ background: rgba(128,128,128,0.15); padding: 2px 6px; border-radius: 4px; }}
         
-        /* ✅ 普通引用块 */
+        /* ✅ 普通引用框 */
         blockquote {{
             margin: 1em 0;
             padding: 10px 15px;
