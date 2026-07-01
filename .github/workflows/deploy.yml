@@ -24,7 +24,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: master
+          ref: main
 
       # 1. Python 环境
       - name: Setup Python
